@@ -1,265 +1,48 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Node Countdown Timer with Firebase</title>
+function startTimer(timerId) {
+    const nodeName = document.getElementById(`node-name-${timerId}`).value || `Node ${timerId}`;
+    const owner = document.getElementById(`owner-${timerId}`).value;
+    const hoursInput = parseInt(document.getElementById(`hours-input-${timerId}`).value, 10) || 0;
+    const minutesInput = parseInt(document.getElementById(`minutes-input-${timerId}`).value, 10) || 0;
+    const secondsInput = parseInt(document.getElementById(`seconds-input-${timerId}`).value, 10) || 0;
 
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+    let totalSeconds = hoursInput * 3600 + minutesInput * 60 + secondsInput;
 
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f0f0f0;
-            color: #333;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
+    if (totalSeconds <= 0) {
+        alert("Please enter a valid time!");
+        return;
+    }
 
-        .grid-container {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 15px;
-            width: 100%;
-            max-width: 1200px;
-            padding: 10px;
-        }
+    // Calculate the end time
+    const endTime = new Date(Date.now() + totalSeconds * 1000);
 
-        .node-timer {
-            padding: 15px;
-            background-color: #fff;
-            border: 1px solid #ccc;
-            border-radius: 10px;
-            text-align: center;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-            font-size: 14px;
-            height: 250px;
-            position: relative;
-        }
+    // Format the end time to a readable format (e.g., "08:01:25 AM" or "20:01:25")
+    const formattedEndTime = endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
 
-        .rank-display {
-            position: absolute;
-            top: -10px;
-            right: 10px;
-            font-size: 18px;
-            font-weight: bold;
-            color: #ff4500;
-            background: #fff;
-            padding: 5px;
-            border: 1px solid #ddd;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
-        }
+    // Display and save the formatted end time
+    document.getElementById(`end-time-${timerId}`).textContent = `End: ${formattedEndTime}`;
 
-        input[type="text"], input[type="number"], select {
-            width: 95%;
-            padding: 8px;
-            margin: 8px 0;
-            font-size: 14px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
+    timers[timerId] = setInterval(() => {
+        if (totalSeconds <= 0) {
+            clearInterval(timers[timerId]);
+            document.getElementById(`remaining-time-${timerId}`).textContent = `${nodeName}: Time's up!`;
+        } else {
+            totalSeconds--;
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
 
-        button {
-            padding: 8px 12px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-            margin-top: 8px;
-        }
+            const remainingTime = `${hours}h ${minutes}m ${seconds}s remaining`;
+            document.getElementById(`remaining-time-${timerId}`).textContent = `${nodeName}: ${remainingTime}`;
 
-        button:hover {
-            background-color: #0056b3;
-        }
-
-        .time-display {
-            margin-top: 10px;
-            font-weight: bold;
-            font-size: 16px;
-            color: #333;
-        }
-
-        .summary {
-            margin-top: 30px;
-            padding: 15px;
-            background: #fff;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-            width: 400px;
-            text-align: left;
-            z-index: 1;
-            position: relative;
-        }
-
-        .summary h3 {
-            margin-bottom: 10px;
-        }
-    </style>
-</head>
-<body>
-    <div class="grid-container" id="timers-container"></div>
-
-    <div class="summary" id="summary-container">
-        <h3>Owner Summary</h3>
-        <p id="summary-restaurant">Restaurant: 0</p>
-        <p id="summary-catmane">Catmane: 0</p>
-        <p id="summary-melon">Melon: 0</p>
-        <p id="summary-krrr">Krrr: 0</p>
-        <p id="summary-earth">Earth: 0</p>
-    </div>
-
-    <script>
-        // Initialize Firebase
-        const firebaseConfig = {
-            apiKey: "AIzaSyDvp-Fbg-Wa5EwzwH_z-UpboDcgs7Hi-3U",
-            authDomain: "catmane-node-war.firebaseapp.com",
-            databaseURL: "https://catmane-node-war-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "catmane-node-war",
-            storageBucket: "catmane-node-war.firebasestorage.app",
-            messagingSenderId: "1047121081251",
-            appId: "1:1047121081251:web:4756522650cbf469f6a016"
-        };
-
-        firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
-
-        const timersRef = database.ref('timers');
-
-        function createTimers() {
-            const container = document.getElementById('timers-container');
-
-            for (let i = 1; i <= 10; i++) {
-                const timerContainer = document.createElement('div');
-                timerContainer.className = 'node-timer';
-                timerContainer.id = `timer-${i}`;
-
-                timerContainer.innerHTML = `
-                    <div class="rank-display" id="rank-${i}">#--</div>
-                    <input type="text" id="node-name-${i}" placeholder="Node ${i}" />
-                    <select id="owner-${i}" onchange="updateOwnerSummary()">
-                        <option value="Restaurant">Restaurant</option>
-                        <option value="Catmane">Catmane</option>
-                        <option value="Melon">Melon</option>
-                        <option value="Krrr">Krrr</option>
-                        <option value="Earth">Earth</option>
-                    </select>
-                    <input type="number" id="hours-input-${i}" placeholder="Hours" min="0" />
-                    <input type="number" id="minutes-input-${i}" placeholder="Minutes" min="0" max="59" />
-                    <input type="number" id="seconds-input-${i}" placeholder="Seconds" min="0" max="59" />
-                    <button onclick="startTimer(${i})">Start</button>
-                    <div class="time-display" id="remaining-time-${i}">Not started</div>
-                    <div class="time-display" id="end-time-${i}">End: N/A</div>
-                `;
-
-                container.appendChild(timerContainer);
-
-                // Sync data from Firebase
-                timersRef.child(i).on('value', (snapshot) => {
-                    const data = snapshot.val();
-                    if (data) {
-                        document.getElementById(`node-name-${i}`).value = data.name;
-                        document.getElementById(`owner-${i}`).value = data.owner;
-                        document.getElementById(`remaining-time-${i}`).textContent = `${data.name}: ${data.remainingTime}`;
-
-                        // Format and display the end time
-                        let displayEndTime;
-                        if (data.endTime.includes('T')) {
-                            const parsedEndTime = new Date(data.endTime);
-                            displayEndTime = parsedEndTime.toLocaleTimeString([], {
-                                hour: '2-digit',
-                                minute: '2-digit',
-                                second: '2-digit',
-                                hour12: false
-                            });
-                        } else {
-                            displayEndTime = data.endTime;
-                        }
-
-                        document.getElementById(`end-time-${i}`).textContent = `End: ${displayEndTime}`;
-                        updateRanks();
-                        updateOwnerSummary();
-                    }
-                });
-            }
-        }
-
-        function startTimer(timerId) {
-            const nodeName = document.getElementById(`node-name-${timerId}`).value || `Node ${timerId}`;
-            const owner = document.getElementById(`owner-${timerId}`).value;
-            const hoursInput = parseInt(document.getElementById(`hours-input-${timerId}`).value, 10) || 0;
-            const minutesInput = parseInt(document.getElementById(`minutes-input-${timerId}`).value, 10) || 0;
-            const secondsInput = parseInt(document.getElementById(`seconds-input-${timerId}`).value, 10) || 0;
-
-            let totalSeconds = hoursInput * 3600 + minutesInput * 60 + secondsInput;
-
-            if (totalSeconds <= 0) {
-                alert("Please enter a valid time!");
-                return;
-            }
-
-            const endTime = new Date(Date.now() + totalSeconds * 1000);
-            const formattedEndTime = endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
-
-            document.getElementById(`end-time-${timerId}`).textContent = `End: ${formattedEndTime}`;
-
+            // Save the data to Firebase
             timersRef.child(timerId).set({
                 name: nodeName,
                 owner: owner,
-                remainingTime: `${hoursInput}h ${minutesInput}m ${secondsInput}s remaining`,
+                remainingTime: remainingTime,
                 endTime: formattedEndTime
             });
 
             updateRanks();
-            updateOwnerSummary();
         }
-
-        function updateRanks() {
-            timersRef.once('value', (snapshot) => {
-                const timersData = [];
-                snapshot.forEach((childSnapshot) => {
-                    const data = childSnapshot.val();
-                    if (data && data.endTime) {
-                        timersData.push({ id: childSnapshot.key, endTime: new Date('1970-01-01T' + data.endTime + 'Z') });
-                    }
-                });
-
-                timersData.sort((a, b) => a.endTime - b.endTime);
-
-                timersData.forEach((timer, index) => {
-                    document.getElementById(`rank-${timer.id}`).textContent = `#${index + 1}`;
-                });
-            });
-        }
-
-        function updateOwnerSummary() {
-            const ownerCounts = { Restaurant: 0, Catmane: 0, Melon: 0, Krrr: 0, Earth: 0 };
-
-            for (let i = 1; i <= 10; i++) {
-                const owner = document.getElementById(`owner-${i}`).value;
-                if (owner) ownerCounts[owner]++;
-            }
-
-            document.getElementById('summary-restaurant').textContent = `Restaurant: ${ownerCounts.Restaurant}`;
-            document.getElementById('summary-catmane').textContent = `Catmane: ${ownerCounts.Catmane}`;
-            document.getElementById('summary-melon').textContent = `Melon: ${ownerCounts.Melon}`;
-            document.getElementById('summary-krrr').textContent = `Krrr: ${ownerCounts.Krrr}`;
-            document.getElementById('summary-earth').textContent = `Earth: ${ownerCounts.Earth}`;
-        }
-
-        createTimers();
-    </script>
-</body>
-</html>
+    }, 1000);
+}
