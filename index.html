@@ -1,266 +1,310 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Node Countdown Timer with Firebase</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Node Countdown Timer with Firebase</title>
 
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
 
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f0f0f0;
-            color: #333;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f0f0f0;
+      color: #333;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
 
-        .grid-container {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 15px;
-            width: 100%;
-            max-width: 1200px;
-            padding: 10px;
-        }
+    .grid-container {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 15px;
+      width: 100%;
+      max-width: 1200px;
+      padding: 10px;
+    }
 
-        .node-timer {
-            padding: 8px;
-            background-color: #fff;
-            border: 1px solid #ccc;
-            border-radius: 10px;
-            text-align: center;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-            font-size: 14px;
-            height: 300px;
-            position: relative;
-        }
+    .node-timer {
+      padding: 8px;
+      background-color: #fff;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      text-align: center;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+      font-size: 14px;
+      height: 300px;
+      position: relative;
+    }
 
-        input[type="text"], input[type="number"], select {
-            width: 95%;
-            padding: 6px;
-            margin: 5px 0;
-            font-size: 14px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
+    input[type="text"],
+    input[type="number"],
+    select {
+      width: 95%;
+      padding: 6px;
+      margin: 5px 0;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
 
-        button {
-            padding: 6px 10px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-            margin-top: 6px;
-        }
+    button {
+      padding: 6px 10px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      margin-top: 6px;
+    }
 
-        button:hover {
-            background-color: #0056b3;
-        }
+    button:hover {
+      background-color: #0056b3;
+    }
 
-        .time-display {
-            margin-top: 6px;
-            font-weight: bold;
-            font-size: 14px;
-            color: #333;
-        }
+    .time-display {
+      margin-top: 6px;
+      font-weight: bold;
+      font-size: 14px;
+      color: #333;
+    }
 
-        .summary-container {
-            display: flex;
-            justify-content: space-between;
-            width: 800px;
-            margin-top: 100px;
-        }
+    .summary-container {
+      display: flex;
+      justify-content: space-between;
+      width: 800px;
+      margin-top: 100px;
+    }
 
-        .summary {
-            padding: 15px;
-            background: #fff;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-            width: 380px;
-            text-align: left;
-            z-index: 1;
-            position: relative;
-        }
+    .summary {
+      padding: 15px;
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+      width: 380px;
+      text-align: left;
+      z-index: 1;
+      position: relative;
+    }
 
-        .summary h3 {
-            margin-bottom: 10px;
-        }
+    .summary h3 {
+      margin-bottom: 10px;
+    }
 
-        .summary .time-summary-entry {
-            margin: 5px 0;
-            font-weight: bold;
-        }
+    .summary .time-summary-entry {
+      margin: 5px 0;
+      font-weight: bold;
+    }
 
-        .time-catmane {
-            color: green;
-        }
+    .time-catmane {
+      color: green;
+    }
 
-        .time-melon {
-            color: red;
-        }
-    </style>
+    .time-melon {
+      color: red;
+    }
+  </style>
 </head>
 <body>
-    <div class="grid-container" id="timers-container"></div>
+  <div class="grid-container" id="timers-container"></div>
 
-    <div class="summary-container">
-        <div class="summary" id="summary-container">
-            <h3>Owner Summary</h3>
-            <p id="summary-restaurant">Restaurant: 0</p>
-            <p id="summary-catmane">Catmane: 0</p>
-            <p id="summary-melon">Melon: 0</p>
-            <p id="summary-krrr">Krrr: 0</p>
-            <p id="summary-earth">Earth: 0</p>
-            <p id="summary-other">Other: 0</p>
-        </div>
-
-        <div class="summary" id="time-summary-container">
-            <h3>Time Summary</h3>
-            <div id="time-summary-list"></div>
-        </div>
+  <div class="summary-container">
+    <div class="summary" id="summary-container">
+      <h3>Owner Summary</h3>
+      <p id="summary-restaurant">Restaurant: 0</p>
+      <p id="summary-catmane">Catmane: 0</p>
+      <p id="summary-melon">Melon: 0</p>
+      <p id="summary-krrr">Krrr: 0</p>
+      <p id="summary-earth">Earth: 0</p>
+      <p id="summary-other">Other: 0</p>
     </div>
 
-    <script>
-        // Initialize Firebase
-        const firebaseConfig = {
-            apiKey: "AIzaSyDvp-Fbg-Wa5EwzwH_z-UpboDcgs7Hi-3U",
-            authDomain: "catmane-node-war.firebaseapp.com",
-            databaseURL: "https://catmane-node-war-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "catmane-node-war",
-            storageBucket: "catmane-node-war.firebasestorage.app",
-            messagingSenderId: "1047121081251",
-            appId: "1:1047121081251:web:4756522650cbf469f6a016"
-        };
+    <div class="summary" id="time-summary-container">
+      <h3>Time Summary</h3>
+      <div id="time-summary-list"></div>
+    </div>
+  </div>
 
-        firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
+  <script>
+    // Initialize Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyDvp-Fbg-Wa5EwzwH_z-UpboDcgs7Hi-3U",
+      authDomain: "catmane-node-war.firebaseapp.com",
+      databaseURL:
+        "https://catmane-node-war-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "catmane-node-war",
+      storageBucket: "catmane-node-war.firebasestorage.app",
+      messagingSenderId: "1047121081251",
+      appId: "1:1047121081251:web:4756522650cbf469f6a016"
+    };
 
-        const timersRef = database.ref('timers');
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+    const timersRef = database.ref("timers");
 
-        function createTimers() {
-            const container = document.getElementById('timers-container');
+    function createTimers() {
+      const container = document.getElementById("timers-container");
 
-            for (let i = 1; i <= 10; i++) {
-                const timerContainer = document.createElement('div');
-                timerContainer.className = 'node-timer';
-                timerContainer.id = `timer-${i}`;
+      for (let i = 1; i <= 10; i++) {
+        const timerContainer = document.createElement("div");
+        timerContainer.className = "node-timer";
+        timerContainer.id = `timer-${i}`;
 
-                timerContainer.innerHTML = `
-                    <input type="text" id="node-name-${i}" placeholder="Node ${i}" />
-                    <select id="owner-${i}" onchange="updateOwnerSummary()">
-                        <option value="Restaurant">Restaurant</option>
-                        <option value="Catmane">Catmane</option>
-                        <option value="Melon">Melon</option>
-                        <option value="Krrr">Krrr</option>
-                        <option value="Earth">Earth</option>
-                        <option value="Other">Other</option>
-                    </select>
-                    <input type="number" id="hours-input-${i}" placeholder="Hours" min="0" />
-                    <input type="number" id="minutes-input-${i}" placeholder="Minutes" min="0" max="59" />
-                    <input type="number" id="seconds-input-${i}" placeholder="Seconds" min="0" max="59" />
-                    <button onclick="startTimer(${i})">Start</button>
-                    <div class="time-display" id="remaining-time-${i}">Remain:</div>
-                    <div class="time-display" id="end-time-${i}">End: N/A</div>
-                `;
+        timerContainer.innerHTML = `
+          <input type="text" id="node-name-${i}" placeholder="Node ${i}" />
+          <select id="owner-${i}" onchange="updateOwnerSummary()">
+              <option value="Restaurant">Restaurant</option>
+              <option value="Catmane">Catmane</option>
+              <option value="Melon">Melon</option>
+              <option value="Krrr">Krrr</option>
+              <option value="Earth">Earth</option>
+              <option value="Other">Other</option>
+          </select>
+          <input type="number" id="hours-input-${i}" placeholder="Hours" min="0" />
+          <input type="number" id="minutes-input-${i}" placeholder="Minutes" min="0" max="59" />
+          <input type="number" id="seconds-input-${i}" placeholder="Seconds" min="0" max="59" />
+          <button onclick="startTimer(${i})">Start</button>
+          <div class="time-display" id="remaining-time-${i}">Remain:</div>
+          <div class="time-display" id="end-time-${i}">End: N/A</div>
+        `;
 
-                container.appendChild(timerContainer);
+        container.appendChild(timerContainer);
 
-                timersRef.child(i).on('value', (snapshot) => {
-                    const data = snapshot.val();
-                    if (data) {
-                        document.getElementById(`node-name-${i}`).value = data.name;
-                        document.getElementById(`owner-${i}`).value = data.owner;
-                        document.getElementById(`remaining-time-${i}`).textContent = `Remain: ${data.remainingTime}`;
+        // Listen for changes in Firebase and update the timer display
+        timersRef.child(i).on("value", (snapshot) => {
+          const data = snapshot.val();
+          if (data) {
+            document.getElementById(`node-name-${i}`).value = data.name;
+            document.getElementById(`owner-${i}`).value = data.owner;
+            document.getElementById(`remaining-time-${i}`).textContent = `Remain: ${data.remainingTime}`;
 
-                        const parsedEndTime = new Date(data.endTime);
-                        const displayEndTime = parsedEndTime.toLocaleTimeString([], {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            second: '2-digit',
-                            hour12: false
-                        });
-
-                        document.getElementById(`end-time-${i}`).textContent = `End: ${displayEndTime}`;
-                        updateOwnerSummary();
-                        updateTimeSummary();
-                    }
-                });
-            }
-        }
-
-        function updateTimeSummary() {
-            timersRef.once('value', (snapshot) => {
-                const timersData = [];
-                snapshot.forEach((childSnapshot) => {
-                    const data = childSnapshot.val();
-                    if (data && data.endTime) {
-                        timersData.push({ name: data.name, owner: data.owner, remainingTime: data.remainingTime, endTime: data.endTime });
-                    }
-                });
-
-                timersData.sort((a, b) => new Date(a.endTime) - new Date(b.endTime));
-
-                const timeSummaryList = document.getElementById('time-summary-list');
-                timeSummaryList.innerHTML = '';
-
-                timersData.forEach(timer => {
-                    let displayTime;
-
-                    // Check if the remaining time contains "999h" to display "Lenababa"
-                    if (timer.remainingTime.startsWith('999h')) {
-                        displayTime = 'Lenababa';
-                    } else {
-                        const parsedTime = new Date(timer.endTime);
-                        displayTime = parsedTime.toLocaleTimeString([], {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            second: '2-digit',
-                            hour12: false
-                        });
-                    }
-
-                    const timeEntry = document.createElement('p');
-                    timeEntry.className = 'time-summary-entry';
-                    timeEntry.textContent = `(${timer.name}): ${displayTime}`;
-
-                    // Apply color based on owner
-                    if (timer.owner === 'Catmane') {
-                        timeEntry.classList.add('time-catmane');
-                    } else if (timer.owner === 'Melon') {
-                        timeEntry.classList.add('time-melon');
-                    }
-
-                    timeSummaryList.appendChild(timeEntry);
-                });
+            const parsedEndTime = new Date(data.endTime);
+            const displayEndTime = parsedEndTime.toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+              second: "2-digit",
+              hour12: false
             });
-        }
 
-        function updateOwnerSummary() {
-            const ownerCounts = { Restaurant: 0, Catmane: 0, Melon: 0, Krrr: 0, Earth: 0, Other: 0 };
+            document.getElementById(`end-time-${i}`).textContent = `End: ${displayEndTime}`;
+            updateOwnerSummary();
+            updateTimeSummary();
+          }
+        });
+      }
+    }
 
-            for (let i = 1; i <= 10; i++) {
-                const owner = document.getElementById(`owner-${i}`).value;
-                if (owner) ownerCounts[owner]++;
-            }
+    // This function is called when the Start button is clicked
+    function startTimer(i) {
+      // Get values from the inputs
+      const nodeName = document.getElementById(`node-name-${i}`).value;
+      const owner = document.getElementById(`owner-${i}`).value;
+      const hours = parseInt(document.getElementById(`hours-input-${i}`).value, 10) || 0;
+      const minutes = parseInt(document.getElementById(`minutes-input-${i}`).value, 10) || 0;
+      const seconds = parseInt(document.getElementById(`seconds-input-${i}`).value, 10) || 0;
 
-            document.getElementById('summary-restaurant').textContent = `Restaurant: ${ownerCounts.Restaurant}`;
-            document.getElementById('summary-catmane').textContent = `Catmane: ${ownerCounts.Catmane}`;
-            document.getElementById('summary-melon').textContent = `Melon: ${ownerCounts.Melon}`;
-            document.getElementById('summary-krrr').textContent = `Krrr: ${ownerCounts.Krrr}`;
-            document.getElementById('summary-earth').textContent = `Earth: ${ownerCounts.Earth}`;
-            document.getElementById('summary-other').textContent = `Other: ${ownerCounts.Other}`;
-        }
+      // Calculate the total time in seconds
+      const totalSeconds = hours * 3600 + minutes * 60 + seconds;
 
-        createTimers();
-    </script>
+      // Calculate the end time based on the current time and totalSeconds
+      const now = new Date();
+      const endTime = new Date(now.getTime() + totalSeconds * 1000);
+
+      // Create a formatted remaining time string
+      const remainingTime = `${hours}h ${minutes}m ${seconds}s`;
+
+      // Update Firebase for the timer node with the new values
+      timersRef.child(i).set({
+        name: nodeName,
+        owner: owner,
+        endTime: endTime.toISOString(),
+        remainingTime: remainingTime
+      });
+    }
+
+    function updateTimeSummary() {
+      timersRef.once("value", (snapshot) => {
+        const timersData = [];
+        snapshot.forEach((childSnapshot) => {
+          const data = childSnapshot.val();
+          if (data && data.endTime) {
+            timersData.push({
+              name: data.name,
+              owner: data.owner,
+              remainingTime: data.remainingTime,
+              endTime: data.endTime
+            });
+          }
+        });
+
+        timersData.sort((a, b) => new Date(a.endTime) - new Date(b.endTime));
+
+        const timeSummaryList = document.getElementById("time-summary-list");
+        timeSummaryList.innerHTML = "";
+
+        timersData.forEach((timer) => {
+          let displayTime;
+
+          // Check if the remaining time contains "999h" to display "Lenababa"
+          if (timer.remainingTime.startsWith("999h")) {
+            displayTime = "Lenababa";
+          } else {
+            const parsedTime = new Date(timer.endTime);
+            displayTime = parsedTime.toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+              second: "2-digit",
+              hour12: false
+            });
+          }
+
+          const timeEntry = document.createElement("p");
+          timeEntry.className = "time-summary-entry";
+          timeEntry.textContent = `(${timer.name}): ${displayTime}`;
+
+          // Apply color based on owner
+          if (timer.owner === "Catmane") {
+            timeEntry.classList.add("time-catmane");
+          } else if (timer.owner === "Melon") {
+            timeEntry.classList.add("time-melon");
+          }
+
+          timeSummaryList.appendChild(timeEntry);
+        });
+      });
+    }
+
+    function updateOwnerSummary() {
+      const ownerCounts = {
+        Restaurant: 0,
+        Catmane: 0,
+        Melon: 0,
+        Krrr: 0,
+        Earth: 0,
+        Other: 0
+      };
+
+      for (let i = 1; i <= 10; i++) {
+        const owner = document.getElementById(`owner-${i}`).value;
+        if (owner) ownerCounts[owner]++;
+      }
+
+      document.getElementById("summary-restaurant").textContent = `Restaurant: ${ownerCounts.Restaurant}`;
+      document.getElementById("summary-catmane").textContent = `Catmane: ${ownerCounts.Catmane}`;
+      document.getElementById("summary-melon").textContent = `Melon: ${ownerCounts.Melon}`;
+      document.getElementById("summary-krrr").textContent = `Krrr: ${ownerCounts.Krrr}`;
+      document.getElementById("summary-earth").textContent = `Earth: ${ownerCounts.Earth}`;
+      document.getElementById("summary-other").textContent = `Other: ${ownerCounts.Other}`;
+    }
+
+    // Create timers when the page loads
+    createTimers();
+  </script>
 </body>
 </html>
