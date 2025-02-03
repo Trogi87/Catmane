@@ -92,7 +92,7 @@
         }
 
         .summary {
-            margin-top: 30px;
+            margin-top: 100px; /* Increased margin to move it lower */
             padding: 15px;
             background: #fff;
             border: 1px solid #ccc;
@@ -174,7 +174,6 @@
                         document.getElementById(`owner-${i}`).value = data.owner;
                         document.getElementById(`remaining-time-${i}`).textContent = `${data.name}: ${data.remainingTime}`;
 
-                        // Format and display the end time
                         let displayEndTime;
                         if (data.endTime.includes('T')) {
                             const parsedEndTime = new Date(data.endTime);
