@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Node Countdown Timer with Firebase</title>
 
-    <!-- Firebase SDK (using compat versions for static websites) -->
+    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
 
@@ -37,9 +37,18 @@
             text-align: center;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             font-size: 14px;
+            position: relative;
         }
 
-        input[type="text"], input[type="number"] {
+        .rank-display {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            font-weight: bold;
+            color: #ff4500;
+        }
+
+        input[type="text"], input[type="number"], select {
             width: 95%;
             padding: 5px;
             margin: 5px 0;
@@ -86,8 +95,6 @@
 
         // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
-
-        // Reference to the Realtime Database
         const database = firebase.database();
 
         const timersRef = database.ref('timers');
@@ -102,7 +109,15 @@
                 timerContainer.id = `timer-${i}`;
 
                 timerContainer.innerHTML = `
+                    <div class="rank-display" id="rank-${i}">#--</div>
                     <input type="text" id="node-name-${i}" placeholder="Node ${i}" />
+                    <select id="owner-${i}">
+                        <option value="Restaurant">Restaurant</option>
+                        <option value="Catmane">Catmane</option>
+                        <option value="Melon">Melon</option>
+                        <option value="Krrr">Krrr</option>
+                        <option value="Earth">Earth</option>
+                    </select>
                     <input type="number" id="hours-input-${i}" placeholder="Hours" min="0" />
                     <input type="number" id="minutes-input-${i}" placeholder="Minutes" min="0" max="59" />
                     <input type="number" id="seconds-input-${i}" placeholder="Seconds" min="0" max="59" />
@@ -118,8 +133,10 @@
                     const data = snapshot.val();
                     if (data) {
                         document.getElementById(`node-name-${i}`).value = data.name;
+                        document.getElementById(`owner-${i}`).value = data.owner;
                         document.getElementById(`remaining-time-${i}`).textContent = `${data.name}: ${data.remainingTime}`;
                         document.getElementById(`end-time-${i}`).textContent = `End: ${data.endTime}`;
+                        updateRanks(); // Update ranks after syncing data
                     }
                 });
             }
@@ -127,6 +144,7 @@
 
         function startTimer(timerId) {
             const nodeName = document.getElementById(`node-name-${timerId}`).value || `Node ${timerId}`;
+            const owner = document.getElementById(`owner-${timerId}`).value;
             const hoursInput = parseInt(document.getElementById(`hours-input-${timerId}`).value, 10) || 0;
             const minutesInput = parseInt(document.getElementById(`minutes-input-${timerId}`).value, 10) || 0;
             const secondsInput = parseInt(document.getElementById(`seconds-input-${timerId}`).value, 10) || 0;
@@ -152,14 +170,38 @@
                     const remainingTime = `${hours}h ${minutes}m ${seconds}s remaining`;
                     document.getElementById(`remaining-time-${timerId}`).textContent = `${nodeName}: ${remainingTime}`;
 
-                    // Save the updated time to Firebase
+                    // Save data to Firebase
                     timersRef.child(timerId).set({
                         name: nodeName,
+                        owner: owner,
                         remainingTime: remainingTime,
-                        endTime: endTime.toLocaleTimeString()
+                        endTime: endTime.toISOString()
                     });
+
+                    updateRanks();
                 }
             }, 1000);
+        }
+
+        function updateRanks() {
+            // Fetch all timers and sort by end time
+            timersRef.once('value', (snapshot) => {
+                const timersData = [];
+                snapshot.forEach((childSnapshot) => {
+                    const data = childSnapshot.val();
+                    if (data && data.endTime) {
+                        timersData.push({ id: childSnapshot.key, endTime: new Date(data.endTime) });
+                    }
+                });
+
+                // Sort by end time ascending
+                timersData.sort((a, b) => a.endTime - b.endTime);
+
+                // Update rank display
+                timersData.forEach((timer, index) => {
+                    document.getElementById(`rank-${timer.id}`).textContent = `#${index + 1}`;
+                });
+            });
         }
 
         // Initialize the timers on page load
