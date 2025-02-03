@@ -37,7 +37,7 @@
             text-align: center;
             box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
             font-size: 14px;
-            height: 300px; /* Increased height */
+            height: 300px;
             position: relative;
         }
 
@@ -120,6 +120,7 @@
             <p id="summary-melon">Melon: 0</p>
             <p id="summary-krrr">Krrr: 0</p>
             <p id="summary-earth">Earth: 0</p>
+            <p id="summary-other">Other: 0</p>
         </div>
 
         <div class="summary" id="time-summary-container">
@@ -161,6 +162,7 @@
                         <option value="Melon">Melon</option>
                         <option value="Krrr">Krrr</option>
                         <option value="Earth">Earth</option>
+                        <option value="Other">Other</option>
                     </select>
                     <input type="number" id="hours-input-${i}" placeholder="Hours" min="0" />
                     <input type="number" id="minutes-input-${i}" placeholder="Minutes" min="0" max="59" />
@@ -226,7 +228,7 @@
         }
 
         function updateOwnerSummary() {
-            const ownerCounts = { Restaurant: 0, Catmane: 0, Melon: 0, Krrr: 0, Earth: 0 };
+            const ownerCounts = { Restaurant: 0, Catmane: 0, Melon: 0, Krrr: 0, Earth: 0, Other: 0 };
 
             for (let i = 1; i <= 10; i++) {
                 const owner = document.getElementById(`owner-${i}`).value;
@@ -238,6 +240,7 @@
             document.getElementById('summary-melon').textContent = `Melon: ${ownerCounts.Melon}`;
             document.getElementById('summary-krrr').textContent = `Krrr: ${ownerCounts.Krrr}`;
             document.getElementById('summary-earth').textContent = `Earth: ${ownerCounts.Earth}`;
+            document.getElementById('summary-other').textContent = `Other: ${ownerCounts.Other}`;
         }
 
         function updateTimeSummary() {
