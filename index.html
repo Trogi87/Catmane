@@ -72,14 +72,20 @@
             color: #333;
         }
 
-        .summary {
+        .summary-container {
+            display: flex;
+            justify-content: space-between;
+            width: 800px;
             margin-top: 100px;
+        }
+
+        .summary {
             padding: 15px;
             background: #fff;
             border: 1px solid #ccc;
             border-radius: 8px;
             box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-            width: 400px;
+            width: 380px;
             text-align: left;
             z-index: 1;
             position: relative;
@@ -93,13 +99,22 @@
 <body>
     <div class="grid-container" id="timers-container"></div>
 
-    <div class="summary" id="summary-container">
-        <h3>Owner Summary</h3>
-        <p id="summary-restaurant">Restaurant: 0</p>
-        <p id="summary-catmane">Catmane: 0</p>
-        <p id="summary-melon">Melon: 0</p>
-        <p id="summary-krrr">Krrr: 0</p>
-        <p id="summary-earth">Earth: 0</p>
+    <div class="summary-container">
+        <!-- Owner Summary Section -->
+        <div class="summary" id="summary-container">
+            <h3>Owner Summary</h3>
+            <p id="summary-restaurant">Restaurant: 0</p>
+            <p id="summary-catmane">Catmane: 0</p>
+            <p id="summary-melon">Melon: 0</p>
+            <p id="summary-krrr">Krrr: 0</p>
+            <p id="summary-earth">Earth: 0</p>
+        </div>
+
+        <!-- Time Summary Section -->
+        <div class="summary" id="time-summary-container">
+            <h3>Time Summary</h3>
+            <div id="time-summary-list"></div>
+        </div>
     </div>
 
     <script>
@@ -152,8 +167,6 @@
                     if (data) {
                         document.getElementById(`node-name-${i}`).value = data.name;
                         document.getElementById(`owner-${i}`).value = data.owner;
-
-                        // Display the remaining time without the node name
                         document.getElementById(`remaining-time-${i}`).textContent = `Remain: ${data.remainingTime}`;
 
                         let displayEndTime;
@@ -171,6 +184,7 @@
 
                         document.getElementById(`end-time-${i}`).textContent = `End: ${displayEndTime}`;
                         updateOwnerSummary();
+                        updateTimeSummary();
                     }
                 });
             }
@@ -193,7 +207,6 @@
             const endTime = new Date(Date.now() + totalSeconds * 1000);
             const formattedEndTime = endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
 
-            // Update display and save to Firebase
             document.getElementById(`end-time-${timerId}`).textContent = `End: ${formattedEndTime}`;
             document.getElementById(`remaining-time-${timerId}`).textContent = `Remain: ${hoursInput}h ${minutesInput}m ${secondsInput}s`;
 
@@ -205,6 +218,7 @@
             });
 
             updateOwnerSummary();
+            updateTimeSummary();
         }
 
         function updateOwnerSummary() {
@@ -220,6 +234,32 @@
             document.getElementById('summary-melon').textContent = `Melon: ${ownerCounts.Melon}`;
             document.getElementById('summary-krrr').textContent = `Krrr: ${ownerCounts.Krrr}`;
             document.getElementById('summary-earth').textContent = `Earth: ${ownerCounts.Earth}`;
+        }
+
+        function updateTimeSummary() {
+            timersRef.once('value', (snapshot) => {
+                const timersData = [];
+                snapshot.forEach((childSnapshot) => {
+                    const data = childSnapshot.val();
+                    if (data && data.endTime) {
+                        timersData.push({ name: data.name, endTime: data.endTime });
+                    }
+                });
+
+                timersData.sort((a, b) => {
+                    const timeA = new Date('1970-01-01T' + a.endTime + 'Z');
+                    const timeB = new Date('1970-01-01T' + b.endTime + 'Z');
+                    return timeA - timeB;
+                });
+
+                const timeSummaryList = document.getElementById('time-summary-list');
+                timeSummaryList.innerHTML = '';
+                timersData.forEach(timer => {
+                    const timeEntry = document.createElement('p');
+                    timeEntry.textContent = `${timer.name} ${timer.endTime}`;
+                    timeSummaryList.appendChild(timeEntry);
+                });
+            });
         }
 
         createTimers();
