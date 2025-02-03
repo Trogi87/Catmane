@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Node Countdown Timer with Firebase</title>
-    
-    <!-- Import Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database.js"></script>
+
+    <!-- Firebase SDK (using compat versions for static websites) -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
 
     <style>
         body {
@@ -73,7 +73,7 @@
     <div class="grid-container" id="timers-container"></div>
 
     <script>
-        // Firebase configuration (from your provided config)
+        // Initialize Firebase (use your actual config values)
         const firebaseConfig = {
             apiKey: "AIzaSyDvp-Fbg-Wa5EwzwH_z-UpboDcgs7Hi-3U",
             authDomain: "catmane-node-war.firebaseapp.com",
@@ -85,7 +85,9 @@
         };
 
         // Initialize Firebase
-        const app = firebase.initializeApp(firebaseConfig);
+        firebase.initializeApp(firebaseConfig);
+
+        // Reference to the Realtime Database
         const database = firebase.database();
 
         const timersRef = database.ref('timers');
