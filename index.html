@@ -197,34 +197,51 @@
             }
         }
 
-        function startTimer(timerId) {
-            const nodeName = document.getElementById(`node-name-${timerId}`).value || `Node ${timerId}`;
-            const owner = document.getElementById(`owner-${timerId}`).value;
-            const hoursInput = parseInt(document.getElementById(`hours-input-${timerId}`).value, 10) || 0;
-            const minutesInput = parseInt(document.getElementById(`minutes-input-${timerId}`).value, 10) || 0;
-            const secondsInput = parseInt(document.getElementById(`seconds-input-${timerId}`).value, 10) || 0;
+        function updateTimeSummary() {
+            timersRef.once('value', (snapshot) => {
+                const timersData = [];
+                snapshot.forEach((childSnapshot) => {
+                    const data = childSnapshot.val();
+                    if (data && data.endTime) {
+                        timersData.push({ name: data.name, owner: data.owner, remainingTime: data.remainingTime, endTime: data.endTime });
+                    }
+                });
 
-            let totalSeconds = hoursInput * 3600 + minutesInput * 60 + secondsInput;
+                timersData.sort((a, b) => new Date(a.endTime) - new Date(b.endTime));
 
-            if (totalSeconds <= 0) {
-                alert("Please enter a valid time!");
-                return;
-            }
+                const timeSummaryList = document.getElementById('time-summary-list');
+                timeSummaryList.innerHTML = '';
 
-            const endTime = new Date(Date.now() + totalSeconds * 1000).toISOString();
+                timersData.forEach(timer => {
+                    let displayTime;
 
-            const formattedRemainingTime = `${hoursInput}h ${minutesInput}m ${secondsInput}s`;
-            document.getElementById(`remaining-time-${timerId}`).textContent = `Remain: ${formattedRemainingTime}`;
+                    // Check if the remaining time contains "999h" to display "Lenababa"
+                    if (timer.remainingTime.startsWith('999h')) {
+                        displayTime = 'Lenababa';
+                    } else {
+                        const parsedTime = new Date(timer.endTime);
+                        displayTime = parsedTime.toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit',
+                            hour12: false
+                        });
+                    }
 
-            timersRef.child(timerId).set({
-                name: nodeName,
-                owner: owner,
-                remainingTime: formattedRemainingTime,
-                endTime: endTime
+                    const timeEntry = document.createElement('p');
+                    timeEntry.className = 'time-summary-entry';
+                    timeEntry.textContent = `(${timer.name}): ${displayTime}`;
+
+                    // Apply color based on owner
+                    if (timer.owner === 'Catmane') {
+                        timeEntry.classList.add('time-catmane');
+                    } else if (timer.owner === 'Melon') {
+                        timeEntry.classList.add('time-melon');
+                    }
+
+                    timeSummaryList.appendChild(timeEntry);
+                });
             });
-
-            updateOwnerSummary();
-            updateTimeSummary();
         }
 
         function updateOwnerSummary() {
@@ -241,45 +258,6 @@
             document.getElementById('summary-krrr').textContent = `Krrr: ${ownerCounts.Krrr}`;
             document.getElementById('summary-earth').textContent = `Earth: ${ownerCounts.Earth}`;
             document.getElementById('summary-other').textContent = `Other: ${ownerCounts.Other}`;
-        }
-
-        function updateTimeSummary() {
-            timersRef.once('value', (snapshot) => {
-                const timersData = [];
-                snapshot.forEach((childSnapshot) => {
-                    const data = childSnapshot.val();
-                    if (data && data.endTime) {
-                        timersData.push({ name: data.name, owner: data.owner, endTime: data.endTime });
-                    }
-                });
-
-                timersData.sort((a, b) => new Date(a.endTime) - new Date(b.endTime));
-
-                const timeSummaryList = document.getElementById('time-summary-list');
-                timeSummaryList.innerHTML = '';
-                timersData.forEach(timer => {
-                    const parsedTime = new Date(timer.endTime);
-                    const formattedTime = parsedTime.toLocaleTimeString([], {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        second: '2-digit',
-                        hour12: false
-                    });
-
-                    const timeEntry = document.createElement('p');
-                    timeEntry.className = 'time-summary-entry';
-                    timeEntry.textContent = `(${timer.name}): ${formattedTime}`;
-
-                    // Apply color based on owner
-                    if (timer.owner === 'Catmane') {
-                        timeEntry.classList.add('time-catmane');
-                    } else if (timer.owner === 'Melon') {
-                        timeEntry.classList.add('time-melon');
-                    }
-
-                    timeSummaryList.appendChild(timeEntry);
-                });
-            });
         }
 
         createTimers();
