@@ -167,6 +167,8 @@
                     if (data) {
                         document.getElementById(`node-name-${i}`).value = data.name;
                         document.getElementById(`owner-${i}`).value = data.owner;
+
+                        // Display the remaining time without "remaining"
                         document.getElementById(`remaining-time-${i}`).textContent = `Remain: ${data.remainingTime}`;
 
                         let displayEndTime;
@@ -207,6 +209,7 @@
             const endTime = new Date(Date.now() + totalSeconds * 1000);
             const formattedEndTime = endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
 
+            // Update display and save to Firebase
             document.getElementById(`end-time-${timerId}`).textContent = `End: ${formattedEndTime}`;
             document.getElementById(`remaining-time-${timerId}`).textContent = `Remain: ${hoursInput}h ${minutesInput}m ${secondsInput}s`;
 
